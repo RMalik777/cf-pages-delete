@@ -1,256 +1,126 @@
-Welcome to your new TanStack Start app!
+# Pages Cleaner
 
-# Getting Started
+Cloudflare does not delete a Pages project that has too many deployments. The Cloudflare dashboard deletes deployments one at a time only. Pages Cleaner deletes many deployments at the same time.
 
-To run this application:
+Users sign in with their own Cloudflare account. Then they select a Pages project and delete all its deployments or only some of them. When the deployments are gone, users can also delete the project.
 
-```bash
-pnpm install
-pnpm dev
-```
+## Features
 
-# Building For Production
+- Sign-in with Cloudflare OAuth, through the generic OAuth plugin of [better-auth](https://better-auth.com).
+- A list of your accounts and Pages projects. It is not necessary to find project IDs.
+- A deployment list that loads all deployments. The list shows how many deployments it loaded.
+- A filter for the environment (production or preview) and a "keep newest N" shortcut.
+- Deletion in small batches at a controlled speed, to stay in the Cloudflare API rate limit. You can pause, stop, and retry the deletion.
+- Protection for the live production deployment. The app does not delete it. When you delete the project, Cloudflare removes the live deployment too.
+- No database. Encrypted cookies keep the session and the Cloudflare token.
 
-To build this application for production:
+The app uses only the official Cloudflare API (`api.cloudflare.com/client/v4`). It calls the API through the Cloudflare [TypeScript SDK](https://github.com/cloudflare/cloudflare-typescript) (`cloudflare` on npm).
 
-```bash
-pnpm build
-```
+The stack is TanStack Start (React), Cloudflare Workers, Tailwind CSS v4, shadcn/ui, and better-auth.
 
-## Styling
+## 1. Create a Cloudflare OAuth client
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+1. In the Cloudflare dashboard, go to **Manage Account > OAuth clients**.
+2. Select **Create client**.
+3. Set these values:
+   - **Grant type:** Authorization code
+   - **Response type:** code
+   - **Token authentication method:** `client_secret_basic`
+4. Add these redirect URLs:
+   - `http://localhost:3000/api/auth/callback/cloudflare` (local development)
+   - `https://<your-domain>/api/auth/callback/cloudflare` (production)
+5. Add these scopes:
+   - `account-settings.read` (Account Settings Read)
+   - `page.read` (Pages Read)
+   - `page.write` (Pages Write)
+   - `user-details.read` (User Details Read)
+6. Copy the client ID and the client secret.
 
-### Removing Tailwind CSS
+The app must have the `account-settings.read` scope. Without this scope, `GET /accounts` gives an empty list.
 
-If you prefer not to use Tailwind CSS:
+Do not add the `offline_access` scope. Cloudflare does not accept this scope for self-managed clients. As a result, the app gets no refresh token. When the Cloudflare access token expires, the user must sign in again.
 
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.json`
+### Private and public clients
 
-## Linting & Formatting
+A new client is **private**. Only members of your Cloudflare account can authorize a private client. If you want all Cloudflare users to sign in, make the client **public**. A public client must have these items:
 
-This project uses [eslint](https://eslint.org/) and [prettier](https://prettier.io/) for linting and formatting. Eslint is configured using [tanstack/eslint-config](https://tanstack.com/config/latest/docs/eslint). The following scripts are available:
+- A client name, a logo, and a client URL
+- A completed domain verification for the client URL
 
-```bash
-pnpm lint
-pnpm format
-pnpm check
-```
+CAUTION: You cannot change a public client back to private. For more information, refer to [Create an OAuth client](https://developers.cloudflare.com/fundamentals/oauth/create-an-oauth-client/#private-and-public-clients).
 
-## Deploy to Cloudflare Workers
+## 2. Set the environment variables
 
-This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) and `wrangler.jsonc`:
+1. Copy `.env.example` to `.env`.
+2. Optionally, put local values in `.env.local`.
+3. Enter the values in this table.
 
-1. Install Wrangler: `npm install -g wrangler`
-2. Authenticate: `wrangler login`
-3. Deploy: `npx wrangler deploy`
+| Variable                   | Value                                                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `CLOUDFLARE_CLIENT_ID`     | The OAuth client ID                                                                                                 |
+| `CLOUDFLARE_CLIENT_SECRET` | The OAuth client secret                                                                                             |
+| `CLOUDFLARE_OAUTH_SCOPES`  | The scopes of the client, with a space between them: `account-settings.read page.read page.write user-details.read` |
+| `BETTER_AUTH_SECRET`       | A random secret with 32 or more characters. To make one, run `openssl rand -base64 32`.                             |
+| `BETTER_AUTH_URL`          | The public base URL, for example `http://localhost:3000`                                                            |
 
-For production env vars, run `wrangler secret put MY_VAR` for each secret listed in `.env.example`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
+## 3. Run the app on your computer
 
-KV, D1, R2, and Durable Object bindings are configured in `wrangler.jsonc` — see https://developers.cloudflare.com/workers/wrangler/configuration/.
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
-
-```bash
-pnpm dlx shadcn@latest add button
-```
-
-## T3Env
-
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
-
-### Usage
-
-```ts
-import { env } from "#/env";
-
-console.log(env.VITE_APP_TITLE);
-```
-
-## Setting up Better Auth
-
-1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
+1. Install the dependencies:
 
    ```bash
-   pnpm dlx @better-auth/cli secret
+   pnpm install
    ```
 
-2. Visit the [Better Auth documentation](https://www.better-auth.com) to unlock the full potential of authentication in your app.
+2. Start the development server:
 
-### Adding a Database (Optional)
+   ```bash
+   pnpm dev
+   ```
 
-Better Auth can work in stateless mode, but to persist user data, add a database:
+3. Open http://localhost:3000.
 
-```typescript
-// src/lib/auth.ts
-import { betterAuth } from "better-auth";
-import { Pool } from "pg";
+Other scripts are `pnpm lint`, `pnpm format`, and `pnpm build`.
 
-export const auth = betterAuth({
-	database: new Pool({
-		connectionString: process.env.DATABASE_URL,
-	}),
-	// ... rest of config
-});
-```
+## 4. Deploy to Cloudflare Workers
 
-Then run migrations:
+1. In `wrangler.jsonc`, set `vars.BETTER_AUTH_URL` to your production URL.
+2. Add the production redirect URL to the OAuth client.
+3. Set the secrets:
 
-```bash
-pnpm dlx @better-auth/cli migrate
-```
+   ```bash
+   pnpm wrangler secret put CLOUDFLARE_CLIENT_ID
+   pnpm wrangler secret put CLOUDFLARE_CLIENT_SECRET
+   pnpm wrangler secret put BETTER_AUTH_SECRET
+   ```
 
-## Routing
+4. Deploy the Worker:
 
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
+   ```bash
+   pnpm run deploy
+   ```
 
-### Adding A Route
+## How the app operates
 
-To add a new route to your application just add a new file in the `./src/routes` directory.
+| Part                               | File                                                   |
+| ---------------------------------- | ------------------------------------------------------ |
+| better-auth configuration          | `src/lib/auth.ts`                                      |
+| Cloudflare SDK client              | `src/lib/cloudflare-api.ts`                            |
+| Server functions (list and delete) | `src/server/cloudflare.functions.ts`                   |
+| Session and token middleware       | `src/server/auth-middleware.ts`                        |
+| Delete queue                       | `src/hooks/use-bulk-delete.ts`                         |
+| Deployment loader                  | `src/hooks/use-all-deployments.ts`                     |
+| Project page                       | `src/routes/_app/projects/$accountId.$projectName.tsx` |
 
-TanStack will automatically generate the content of the route file for you.
+The browser controls the deletion. It sends 10 deployment IDs in each server call. The speed is approximately 3.5 deletions each second. Thus, each Worker request stays short, and the app stays in the Cloudflare rate limit of approximately 1200 requests in 5 minutes.
 
-Now that you have two routes you can use a `Link` component to navigate between them.
+If the API returns `429`, the queue stops for the time in the `Retry-After` header. Then the queue continues. The delete calls do not use the automatic retries of the SDK. Thus, only the queue controls the speed.
 
-### Adding Links
+The app uses these Cloudflare API endpoints:
 
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
-
-export const Route = createRootRoute({
-	head: () => ({
-		meta: [
-			{ charSet: "utf-8" },
-			{ name: "viewport", content: "width=device-width, initial-scale=1" },
-			{ title: "My App" },
-		],
-	}),
-	shellComponent: ({ children }) => (
-		<html lang="en">
-			<head>
-				<HeadContent />
-			</head>
-			<body>
-				<header>
-					<nav>
-						<Link to="/">Home</Link>
-						<Link to="/about">About</Link>
-					</nav>
-				</header>
-				{children}
-				<Scripts />
-			</body>
-		</html>
-	),
-});
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from "@tanstack/react-start";
-
-const getServerTime = createServerFn({
-	method: "GET",
-}).handler(async () => {
-	return new Date().toISOString();
-});
-
-// Use in a component
-function MyComponent() {
-	const [time, setTime] = useState("");
-
-	useEffect(() => {
-		getServerTime().then(setTime);
-	}, []);
-
-	return <div>Server time: {time}</div>;
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from "@tanstack/react-router";
-import { json } from "@tanstack/react-start";
-
-export const Route = createFileRoute("/api/hello")({
-	server: {
-		handlers: {
-			GET: () => json({ message: "Hello, World!" }),
-		},
-	},
-});
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from "@tanstack/react-router";
-
-export const Route = createFileRoute("/people")({
-	loader: async () => {
-		const response = await fetch("https://swapi.dev/api/people");
-		return response.json();
-	},
-	component: PeopleComponent,
-});
-
-function PeopleComponent() {
-	const data = Route.useLoaderData();
-	return (
-		<ul>
-			{data.results.map((person) => (
-				<li key={person.name}>{person.name}</li>
-			))}
-		</ul>
-	);
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+- `GET /user`
+- `GET /accounts`
+- `GET /accounts/{account_id}/pages/projects`
+- `GET /accounts/{account_id}/pages/projects/{project_name}`
+- `GET /accounts/{account_id}/pages/projects/{project_name}/deployments`
+- `DELETE /accounts/{account_id}/pages/projects/{project_name}/deployments/{deployment_id}?force=true`
+- `DELETE /accounts/{account_id}/pages/projects/{project_name}`
