@@ -42,9 +42,6 @@ function ProjectsPage() {
 	const accountId = accounts.some((a) => a.id === search.account)
 		? search.account
 		: accounts[0]?.id;
-	useEffect(() => {
-		console.log("account", accounts);
-	}, []);
 
 	return (
 		<div className="flex flex-col gap-6">
