@@ -1,14 +1,14 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "cf-pages-delete",
-	"compatibility_date": "2025-09-02",
+	"compatibility_date": "2026-09-08",
 	"compatibility_flags": ["nodejs_compat"],
 	"main": "@tanstack/react-start/server-entry",
 	"observability": { "enabled": true },
 	// Non-secret config. Secrets (CLOUDFLARE_CLIENT_ID, CLOUDFLARE_CLIENT_SECRET,
 	// BETTER_AUTH_SECRET) are set with `wrangler secret put <NAME>`.
 	"vars": {
-		"BETTER_AUTH_URL": "https://cf-pages-delete.example.workers.dev",
+		"BETTER_AUTH_URL": "https://cf.raflimalik.com",
 		"CLOUDFLARE_OAUTH_SCOPES": "account-settings.read page.read page.write user-details.read",
 	},
 }
