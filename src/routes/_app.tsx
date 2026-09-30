@@ -1,6 +1,7 @@
 import { Link, Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 
 import { Logo } from "#/components/logo";
+import { SiteFooter } from "#/components/site-footer";
 import { UserMenu } from "#/components/user-menu";
 import { getSessionUser } from "#/server/cloudflare.functions";
 
@@ -35,6 +36,7 @@ function AppLayout() {
 			<main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-8 sm:px-6">
 				<Outlet />
 			</main>
+			<SiteFooter />
 		</div>
 	);
 }

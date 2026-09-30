@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Logo } from "#/components/logo";
 import { Badge } from "#/components/ui/badge";
 import { SignInButton } from "#/components/sign-in-button";
+import { SiteFooter } from "#/components/site-footer";
 import { getSessionUser } from "#/server/cloudflare.functions";
 
 export const Route = createFileRoute("/")({
@@ -67,6 +68,8 @@ function Landing() {
 
 				<DemoPanel />
 			</main>
+
+			<SiteFooter />
 		</div>
 	);
 }
