@@ -1,4 +1,4 @@
-import { Github } from "lucide-react";
+import { siGithub } from "simple-icons";
 
 import { cn } from "#/lib/utils";
 
@@ -28,7 +28,9 @@ export function SiteFooter({ className }: { className?: string }) {
 						rel="noreferrer"
 						className="flex items-center gap-1.5 rounded-sm underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/50"
 					>
-						<Github className="size-4" aria-hidden />
+						<svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden>
+							<path d={siGithub.path} />
+						</svg>
 						Source on GitHub
 					</a>
 				</div>
