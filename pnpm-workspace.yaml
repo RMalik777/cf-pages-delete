@@ -4,3 +4,14 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   workerd: true
+permissions:
+  "@tanstack/devtools-vite":
+    skills: true
+  "@tanstack/react-router":
+    skills: [router-query, react-router]
+  "@tanstack/react-start":
+    skills: [react-start]
+skills:
+  dirs:
+    - .agents/skills
+    - .claude/skills
